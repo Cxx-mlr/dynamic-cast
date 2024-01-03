@@ -1,7 +1,6 @@
-from typing import Any, overload, Iterable, Sequence, MutableSequence, get_origin
+from typing import Any, overload, Iterable, Sequence, MutableSequence, get_origin, Union
 from collections.abc import Callable; from collections import OrderedDict
 
-from types import MappingProxyType, UnionType
 import functools
 import inspect
 from itertools import zip_longest
@@ -9,15 +8,15 @@ from itertools import zip_longest
 from .utils.typing import *
 
 @overload
-def dynamic_cast(func_: Callable[P, R], *, ret_value_error: Any | None=None)\
+def dynamic_cast(func_: Callable[P, R], *, ret_value_error: Any=None)\
     -> Callable[..., R]: ...
 
 @overload
-def dynamic_cast(func_: None = None, *, ret_value_error: Any | None=None)\
+def dynamic_cast(func_: None = None, *, ret_value_error: Any=None)\
     -> Callable[[Callable[P, R]], Callable[..., R]]: ...
 
-def dynamic_cast(func_: Callable[P, R] | None = None, *, ret_value_error: Any | None=None)\
-    -> Callable[..., R] | Callable[[Callable[P, R]], Callable[..., R]]:
+def dynamic_cast(func_: Callable[P, R] = None, *, ret_value_error: Any=None)\
+    -> Union[Callable[..., R], Callable[[Callable[P, R]], Callable[..., R]]]:
     def dynamic_cast_impl_(argument: ARGUMENT, annotation: ANNOTATION) -> ANNOTATION:
         if annotation in (inspect.Parameter.empty, inspect.Signature.empty, Any):
             return argument
@@ -66,7 +65,7 @@ def dynamic_cast(func_: Callable[P, R] | None = None, *, ret_value_error: Any | 
                             ),
                             origin
                         )
-            elif origin is UnionType:
+            elif origin is Union:
                 for element_type in (args := getattr(annotation, "__args__", ())):
                     try:
                         value = dynamic_cast_impl_(argument, element_type)
@@ -97,7 +96,7 @@ def dynamic_cast(func_: Callable[P, R] | None = None, *, ret_value_error: Any | 
         @functools.wraps(func)
         def wrapper_dynamic_cast(*args: Any, **kwargs: Any) -> R:
             signature: inspect.Signature = inspect.signature(func)
-            parameters: MappingProxyType[str, inspect.Parameter] = signature.parameters
+            parameters = signature.parameters
             bind: inspect.BoundArguments = signature.bind(*args, **kwargs)
             arguments: OrderedDict[str, Any] = bind.arguments
             args_f = list(); kwargs_f = dict()

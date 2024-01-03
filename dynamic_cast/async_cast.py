@@ -1,7 +1,9 @@
-from typing import Any, overload, Iterable, Sequence, MutableSequence, get_origin, Awaitable, Callable, OrderedDict
+from typing import (
+    Any, overload, Iterable, Sequence, MutableSequence,
+    get_origin, Awaitable, Callable, OrderedDict, Union, Optional
+ )
 from collections.abc import Callable; from collections import OrderedDict
 
-from types import MappingProxyType, UnionType
 import functools
 import inspect
 from itertools import zip_longest
@@ -9,14 +11,14 @@ from itertools import zip_longest
 from .utils.typing import *
 
 @overload
-def async_cast(func_: Callable[P, Awaitable[R]], *, ret_value_error: Any | None=None)\
+def async_cast(func_: Callable[P, Awaitable[R]], *, ret_value_error: Any=None)\
     -> Callable[..., Awaitable[R]]: ...
 
 @overload
-def async_cast(func_: None = None, *, ret_value_error: Any | None=None)\
+def async_cast(func_: None = None, *, ret_value_error: Any=None)\
     -> Callable[[Callable[P, Awaitable[R]]], Callable[..., Awaitable[R]]]: ...
 
-def async_cast(func_: Callable[P, Awaitable[R]] | None = None, *, ret_value_error: Any | None=None)\
+def async_cast(func_: Callable[P, Awaitable[R]] = None, *, ret_value_error: Any=None)\
     -> Callable[..., Awaitable[R]] | Callable[[Callable[P, Awaitable[R]]], Callable[..., Awaitable[R]]]:
     async def async_cast_impl_(argument: ARGUMENT, annotation: ANNOTATION) -> Awaitable[ANNOTATION]:
         if annotation in (inspect.Parameter.empty, inspect.Signature.empty, Any):
@@ -66,7 +68,7 @@ def async_cast(func_: Callable[P, Awaitable[R]] | None = None, *, ret_value_erro
                             ),
                             origin
                         )
-            elif origin is UnionType:
+            elif origin is Union:
                 for element_type in (args := getattr(annotation, "__args__", ())):
                     try:
                         value = await async_cast_impl_(argument, element_type)
@@ -97,7 +99,7 @@ def async_cast(func_: Callable[P, Awaitable[R]] | None = None, *, ret_value_erro
         @functools.wraps(func)
         async def wrapper_async_cast(*args: Any, **kwargs: Any) -> R:
             signature: inspect.Signature = inspect.signature(func)
-            parameters: MappingProxyType[str, inspect.Parameter] = signature.parameters
+            parameters = signature.parameters
             bind: inspect.BoundArguments = signature.bind(*args, **kwargs)
             arguments: OrderedDict[str, Any] = bind.arguments
             args_f = list(); kwargs_f = dict()
