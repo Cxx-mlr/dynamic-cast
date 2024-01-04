@@ -1,119 +1,102 @@
 from typing import (
-    Any, overload, Iterable, Sequence, MutableSequence,
-    get_origin, Awaitable, Callable, OrderedDict, Union, Optional
+    Any, Iterable, Mapping, Awaitable, Callable, OrderedDict, Union, Optional,
+    get_origin, get_args, overload
  )
-from collections.abc import Callable; from collections import OrderedDict
+from collections import OrderedDict
+from types import MappingProxyType
 
 import functools
 import inspect
-from itertools import zip_longest
 
 from .utils.typing import *
 
-@overload
-def async_cast(func_: Callable[P, Awaitable[R]], *, ret_value_error: Any=None)\
-    -> Callable[..., Awaitable[R]]: ...
+async def _is_callable(function: Any, *args: Any, **kwargs: Any) -> bool:
+    try:
+        inspect.signature(function).bind(*args, **kwargs)
+    except Exception:
+        return False
+    else:
+        return True
 
 @overload
-def async_cast(func_: None = None, *, ret_value_error: Any=None)\
-    -> Callable[[Callable[P, Awaitable[R]]], Callable[..., Awaitable[R]]]: ...
+def async_cast(func_: Callable[P, Awaitable[R]]) -> Callable[..., Awaitable[R]]: ...
 
-def async_cast(func_: Callable[P, Awaitable[R]] = None, *, ret_value_error: Any=None)\
-    -> Callable[..., Awaitable[R]] | Callable[[Callable[P, Awaitable[R]]], Callable[..., Awaitable[R]]]:
-    async def async_cast_impl_(argument: ARGUMENT, annotation: ANNOTATION) -> Awaitable[ANNOTATION]:
-        if annotation in (inspect.Parameter.empty, inspect.Signature.empty, Any):
-            return argument
-        elif isinstance(argument, str) and annotation is int:
-            return await async_cast_impl_(
-                await async_cast_impl_(argument, float),
-                int
+@overload
+def async_cast(func_: None = None) -> Callable[[Callable[P, Awaitable[R]]], Callable[..., Awaitable[R]]]: ...
+
+def async_cast(func_: Optional[Callable[P, Awaitable[R]]] = None) -> Union[
+    Callable[..., Awaitable[R]],
+    Callable[[Callable[P, Awaitable[R]]], Callable[..., Awaitable[R]]]
+]:
+    @overload
+    async def async_cast_impl(value: Any, annotation: None) -> None: ...
+
+    @overload
+    async def async_cast_impl(value: Any, annotation: ANNOTATION) -> ANNOTATION: ...
+
+    @overload
+    async def async_cast_impl(value: VALUE, annotation: Any) -> VALUE: ...
+
+    async def async_cast_impl(value, annotation):
+        if annotation is None:
+            return None
+        elif annotation in (inspect.Parameter.empty, inspect.Signature.empty, Any):
+            return value
+        elif annotation is int and isinstance(value, str):
+            return async_cast_impl(
+                async_cast_impl(value, float), int
             )
-        elif (origin := get_origin(annotation)) is not None:
-            if origin is dict:
-                key_type, value_type = getattr(annotation, "__args__", (Any, Any))
-                return await async_cast_impl_(
-                    {await async_cast_impl_(key, key_type): await async_cast_impl_(value, value_type) for key, value in argument.items()},
-                    origin
+        elif (__origin__ := get_origin(annotation)) is not None:
+            if issubclass(__origin__, Mapping):
+                __args__ = get_args(annotation) or (Any, Any)
+                key_type, value_type = __args__
+
+                return async_cast_impl(
+                    {async_cast_impl(key, key_type):async_cast_impl(value, value_type) for key, value in value.items()},
+                    __origin__
                 )
-            elif issubclass(origin, Iterable):
-                if issubclass(origin, MutableSequence):
-                    value_type = getattr(annotation, "__args__", [lambda _: _])[0]
-                    return await async_cast_impl_(
-                        (await async_cast_impl_(arg, value_type) for arg in argument),
-                        origin
+            elif issubclass(__origin__, Iterable):
+                __args__ = get_args(annotation) or ()
+                if len(__args__) == 1 or len(__args__) == 2 and __args__[1] is Ellipsis:
+                    return async_cast_impl(
+                        (async_cast_impl(i, __args__[0]) for i in value),
+                        __origin__
                     )
-                elif issubclass(origin, Sequence):
-                    value_types = getattr(annotation, "__args__", [])
-                    if len(value_types) == 1:
-                        return await async_cast_impl_(
-                            (
-                                await async_cast_impl_(
-                                    arg, value_type
-                                )
-                                for arg, value_type in zip_longest(
-                                    argument, value_types, fillvalue=value_types[0]
-                                )
-                            ),
-                            origin
-                        )
-                    else:
-                        return await async_cast_impl_(
-                            (
-                                await async_cast_impl_(
-                                    arg, value_type
-                                )
-                                for arg, value_type in zip(
-                                    argument, value_types
-                                )
-                            ),
-                            origin
-                        )
-            elif origin is Union:
-                for element_type in (args := getattr(annotation, "__args__", ())):
-                    try:
-                        value = await async_cast_impl_(argument, element_type)
-                    except ValueError:
-                        continue
-                    else:
-                        return value
-                if ret_value_error is not None:
-                    return ret_value_error
                 else:
-                    conversion_type = "string" if isinstance(argument, str) else getattr(type(argument), '__name__', type(argument))
-                    argument_repr = f"{argument!r}"
-                    error_message = "".join(
-                        f"\ncould not convert {conversion_type} to {getattr(arg, '__name__', arg)}: {argument_repr}" for arg in args
+                    offset = len(value)
+                    remaining_annotations = __args__[offset:]
+                    default_constructed = [x() for x in remaining_annotations]
+
+                    merged_values = list(value) + default_constructed
+                    return async_cast_impl(
+                        (async_cast_impl(i, value_type) for i, value_type in zip(merged_values, __args__)),
+                        __origin__
                     )
-                    raise ValueError(error_message)
-        else:
-            try:
-                value = annotation(argument)
-            except ValueError:
-                if ret_value_error is not None:
-                    return ret_value_error
-                else:
-                    raise
             else:
-                return value
+                return None
+        elif await _is_callable(getattr(annotation, "__init__"), value) or await _is_callable(annotation, value):
+            return annotation(value)
+        else:
+            return value
     def decorator_async_cast(func: Callable[P, Awaitable[R]]) -> Callable[..., Awaitable[R]]:
         @functools.wraps(func)
         async def wrapper_async_cast(*args: Any, **kwargs: Any) -> R:
             signature: inspect.Signature = inspect.signature(func)
-            parameters = signature.parameters
+            parameters: MappingProxyType[str, inspect.Parameter] = signature.parameters
             bind: inspect.BoundArguments = signature.bind(*args, **kwargs)
             arguments: OrderedDict[str, Any] = bind.arguments
             args_f = list(); kwargs_f = dict()
-            for pname, argument in arguments.items():
+            for pname, value in arguments.items():
                 parameter: inspect.Parameter = parameters[pname]
                 annotation: type = parameter.annotation
-                argument = await async_cast_impl_(argument, annotation)
+                value = await async_cast_impl(value, annotation)
                 if parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
-                    args_f.append(argument)
+                    args_f.append(value)
                 elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-                    args_f.extend(argument)
+                    args_f.extend(value)
                 elif parameter.kind in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD):
-                    kwargs_f.update({pname: argument})
-            return await async_cast_impl_(await func(*args_f, **kwargs_f), signature.return_annotation)
+                    kwargs_f[pname] = value
+            return await async_cast_impl(await func(*args_f, **kwargs_f), signature.return_annotation)
         return wrapper_async_cast
     if func_ is None:
         return decorator_async_cast
