@@ -3,4 +3,4 @@
 /.mypy_cache/
 /.env
 /main.py
-__pycache__/
+__pycache__
