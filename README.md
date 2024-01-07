@@ -11,7 +11,7 @@ This Python module provides a dynamic casting utility that enables flexible cast
 To use this dynamic casting utility, you can include it in your project by importing the `dynamic_cast` function from the module.
 
 ```python
-from your_module import dynamic_cast
+from dynamic_cast import dynamic_cast
 ```
 
 ## Usage
