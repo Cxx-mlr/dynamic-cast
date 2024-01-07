@@ -23,7 +23,7 @@ The `dynamic_cast` function can be applied to functions to dynamically cast thei
 ```python
 @dynamic_cast
 def example_function(arg1: int, arg2: str) -> float:
-    # Function logic here
+    # Function logic here.
     return result
 ```
 
@@ -34,13 +34,13 @@ For more advanced scenarios, the utility provides additional functionality, such
 ```python
 @dynamic_cast
 def advanced_function(arg1: List[int], arg2: Dict[str, float]) -> Tuple[str, int]:
-    # Advanced function logic here
+    # Advanced function logic here.
     return result_tuple
 ```
 
-## Examples
+## Examples.
 
-### Dynamic Casting of Arguments
+### Dynamic Casting of Arguments.
 
 ```python
 @dynamic_cast
