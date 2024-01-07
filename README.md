@@ -38,9 +38,9 @@ def advanced_function(arg1: List[int], arg2: Dict[str, float]) -> Tuple[str, int
     return result_tuple
 ```
 
-## Examples
+## Examples.
 
-### Dynamic Casting of Arguments
+### Dynamic Casting of Arguments.
 
 ```python
 @dynamic_cast
