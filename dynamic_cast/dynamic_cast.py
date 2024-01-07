@@ -1,4 +1,7 @@
-from typing import Any, Iterable, Union, Optional, Callable, get_origin, get_args, overload
+from typing import (
+    Any, Iterable, Union, Optional, Mapping,
+    Callable, get_origin, get_args, overload, cast, Tuple
+)
 from collections import OrderedDict
 
 from types import MappingProxyType
@@ -6,15 +9,18 @@ from types import MappingProxyType
 import functools
 import inspect
 
-from .utils.typing import *
+from .utils._typing import *
+from .utils._builtins import _is_builtin
 
-def _is_callable(function: Any, *args: Any, **kwargs: Any) -> bool:
-    try:
-        inspect.signature(function).bind(*args, **kwargs)
-    except Exception:
-        return False
-    else:
-        return True
+def _is_callable(annotation: ANNOTATION, *args: Any, **kwargs: Any) -> bool:
+    def __is_callable(annotation: ANNOTATION, *args: Any, **kwargs: Any) -> bool:
+        try:
+            inspect.signature(annotation).bind(*args, **kwargs)
+        except Exception as e:
+            return False
+        else:
+            return True
+    return inspect.isfunction(annotation) and __is_callable(annotation, *args, **kwargs)
 
 @overload
 def dynamic_cast(func_: Callable[P, R]) -> Callable[..., R]: ...
@@ -72,9 +78,28 @@ def dynamic_cast(func_: Optional[Callable[P, R]] = None) -> Union[
                     )
             else:
                 return None
-        elif _is_callable(getattr(annotation, "__init__"), value) or _is_callable(annotation, value):
+        elif _is_builtin(annotation):
+            try:
+                return annotation(value)
+            except:
+                return value
+        elif _is_callable(annotation, value):
             return annotation(value)
+        elif isinstance(value, Iterable) and _is_callable(annotation, *value):
+            return annotation(*value)
         else:
+            if inspect.isclass(annotation):
+                instance = annotation.__new__(annotation)
+
+                if isinstance(value, Iterable):
+                    if len(inspect.signature(instance.__init__).parameters) == 1:
+                        dynamic_cast(instance.__init__)(value)
+                    else:
+                        dynamic_cast(instance.__init__)(*value)
+                else:
+                    dynamic_cast(instance.__init__)(value)
+
+                return instance
             return value
     def decorator_dynamic_cast(func: Callable[P, R]) -> Callable[..., R]:
         @functools.wraps(func)
@@ -94,8 +119,7 @@ def dynamic_cast(func_: Optional[Callable[P, R]] = None) -> Union[
                     args_f.extend(value)
                 elif parameter.kind in (inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.VAR_KEYWORD):
                     kwargs_f[pname] = value
-            ret = func(*args_f, **kwargs_f)
-            return dynamic_cast_impl(ret, signature.return_annotation)
+            return dynamic_cast_impl(func(*args_f, **kwargs_f), signature.return_annotation)
         return wrapper_dynamic_cast
     if func_ is None:
         return decorator_dynamic_cast

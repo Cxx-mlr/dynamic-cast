@@ -8,7 +8,7 @@ from types import MappingProxyType
 import functools
 import inspect
 
-from .utils.typing import *
+from .utils._typing import *
 
 async def _is_callable(function: Any, *args: Any, **kwargs: Any) -> bool:
     try:
