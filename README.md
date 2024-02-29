@@ -8,10 +8,10 @@ This Python module provides a dynamic casting utility that enables flexible cast
 
 ## Installation
 
-To use this dynamic casting utility, you can include it in your project by importing the `dynamic_cast` function from the module.
+Install dynamic-cast via pip:
 
 ```python
-from dynamic_cast import dynamic_cast
+pip install dynamic-cast
 ```
 
 ## Usage
@@ -38,25 +38,9 @@ def advanced_function(arg1: List[int], arg2: Dict[str, float]) -> Tuple[str, int
     return result_tuple
 ```
 
-## Examples.
+## Examples:
 
-### Dynamic Casting of Arguments.
-
-```python
-@dynamic_cast
-def example_function(arg1: Union[str, int], arg2: List[float]) -> Tuple[str, List[int]]:
-    # Function logic here
-    return result_tuple
-```
-
-### Dynamic Casting of Class Instances
-
-```python
-class ExampleClass:
-    @dynamic_cast
-    def __init__(self, arg1: int, arg2: str) -> None:
-        # Class initialization logic here
-```
+...
 
 ## Contributing
 
