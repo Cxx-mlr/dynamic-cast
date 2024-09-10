@@ -5,3 +5,4 @@ __pycache__
 .pdm-build
 .venv
 uv.lock
+dist
