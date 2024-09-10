@@ -1,6 +1,8 @@
-/dist/
-/.pytest_cache/
-/.mypy_cache/
-/.env
-/main.py
 __pycache__
+.pytest_cache/
+.mypy_cache/
+.pdm-python
+.pdm-build
+.venv
+uv.lock
+dist

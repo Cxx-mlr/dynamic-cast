@@ -1,44 +1,56 @@
-[tool.poetry]
-name = "dynamic-cast"
-version = "0.1.1a1"
-description = ""
-authors = ["Cxx-mlr <spapiernik12@gmail.com>"]
-
-readme = "README.md"
-license = "MIT"
-keywords = [""]
-classifiers = [
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Operating System :: Microsoft :: Windows :: Windows 10",
-    "Operating System :: Microsoft :: Windows :: Windows 11",
-    "Operating System :: MacOS",
-    "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Typing :: Typed",
-]
-homepage = "https://github.com/Cxx-mlr"
-repository = "https://github.com/Cxx-mlr/dynamic-cast"
-documentation = "https://github.com/Cxx-mlr/dynamic-cast/blob/main/README.md"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-
-[tool.poetry.dependencies]
-python = ">=3.8"
-typing-extensions = "^4.9.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.3"
-mypy = "^1.8.0"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry.scripts]
-dynamic_cast = 'dynamic_cast.__main__:main'
+[project]
+name = "dynamic-cast"
+dynamic = ["version"]
+dependencies = [
+    "packaging>=24.1",
+    "typing-extensions>=4.12.2",
+]
+requires-python = ">=3.8"
+authors = [
+    { name="Santiago Papiernik", email="spapiernik12@gmail.com" },
+]
+description = "A Python library for flexible type casting of function arguments and return values based on type annotations."
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = [
+  "type-casting",
+  "type-annotations",
+  "dynamic-typing",
+  "python-type-hints",
+  "type-conversion",
+  "function-arguments",
+  "type-checking",
+  "callable-type",
+  "data-types",
+  "type-safety",
+  "python-decorators",
+  "runtime-type-checking",
+  "type-inference",
+  "generic-types",
+  "automatic-type-casting",
+  "type-system"
+]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Repository = "https://github.com/Cxx-mlr/dynamic-cast"
+
+[project.scripts]
+dynamic-cast = 'dynamic_cast.__main__:main'
+
+[tool.pdm]
+version = { source = "file", path = "dynamic_cast/__init__.py" }
+distribution = true
