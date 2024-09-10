@@ -1,0 +1,55 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "dynamic-cast"
+dynamic = ["version"]
+dependencies = [
+    "typing-extensions>=4.12.2",
+]
+requires-python = ">=3.8"
+authors = [
+    { name="Santiago Papiernik", email="spapiernik12@gmail.com" },
+]
+description = "A Python library for flexible type casting of function arguments and return values based on type annotations."
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = [
+  "type-casting",
+  "type-annotations",
+  "dynamic-typing",
+  "python-type-hints",
+  "type-conversion",
+  "function-arguments",
+  "type-checking",
+  "callable-type",
+  "data-types",
+  "type-safety",
+  "python-decorators",
+  "runtime-type-checking",
+  "type-inference",
+  "generic-types",
+  "automatic-type-casting",
+  "type-system"
+]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Repository = "https://github.com/Cxx-mlr/dynamic-cast"
+
+[project.scripts]
+dynamic-cast = 'dynamic_cast.__main__:main'
+
+[tool.pdm]
+version = { source = "file", path = "dynamic_cast/__init__.py" }
+distribution = true
