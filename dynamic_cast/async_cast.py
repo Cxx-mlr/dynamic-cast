@@ -43,23 +43,23 @@ def async_cast(func_: Optional[Callable[P, Awaitable[R]]] = None) -> Union[
         elif annotation in (inspect.Parameter.empty, inspect.Signature.empty, Any):
             return value
         elif annotation is int and isinstance(value, str):
-            return async_cast_impl(
-                async_cast_impl(value, float), int
+            return await async_cast_impl(
+                await async_cast_impl(value, float), int
             )
         elif (__origin__ := get_origin(annotation)) is not None:
             if issubclass(__origin__, Mapping):
                 __args__ = get_args(annotation) or (Any, Any)
                 key_type, value_type = __args__
 
-                return async_cast_impl(
-                    {async_cast_impl(key, key_type):async_cast_impl(value, value_type) for key, value in value.items()},
+                return await async_cast_impl(
+                    {await async_cast_impl(key, key_type):await async_cast_impl(value, value_type) for key, value in value.items()},
                     __origin__
                 )
             elif issubclass(__origin__, Iterable):
                 __args__ = get_args(annotation) or ()
                 if len(__args__) == 1 or len(__args__) == 2 and __args__[1] is Ellipsis:
-                    return async_cast_impl(
-                        (async_cast_impl(i, __args__[0]) for i in value),
+                    return await async_cast_impl(
+                        (await async_cast_impl(i, __args__[0]) for i in value),
                         __origin__
                     )
                 else:
@@ -68,8 +68,8 @@ def async_cast(func_: Optional[Callable[P, Awaitable[R]]] = None) -> Union[
                     default_constructed = [x() for x in remaining_annotations]
 
                     merged_values = list(value) + default_constructed
-                    return async_cast_impl(
-                        (async_cast_impl(i, value_type) for i, value_type in zip(merged_values, __args__)),
+                    return await async_cast_impl(
+                        (await async_cast_impl(i, value_type) for i, value_type in zip(merged_values, __args__)),
                         __origin__
                     )
             else:
