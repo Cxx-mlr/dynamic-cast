@@ -13,7 +13,7 @@ from .utils._typing import *
 from .utils._builtins import _is_builtin
 
 def _is_callable(annotation: ANNOTATION, *args: Any, **kwargs: Any) -> bool:
-    def __is_callable(annotation: ANNOTATION, *args: Any, **kwargs: Any) -> bool:
+    def __is_callable(annotation: Any, *args: Any, **kwargs: Any) -> bool:
         try:
             inspect.signature(annotation).bind(*args, **kwargs)
         except Exception as e:
